@@ -1,41 +1,25 @@
 import panphon;
+import panphon.distance
 import os
 import copy
 #from ..minphonfeat import featuremin as minphonfeat
-English = u"pʰ p b b̥ tʰ t ɾ d d̥ ɾ kʰ k ɡ ɡ̥̊ t̠ʃ d̠ʒ f v θ ð s z ʃ ʒ h m n ɾ ŋ l ɫ ɹ j w ɪ ɛ æ ɑ oʊ ʊ uː ʉː ʌ ɚː ə aɪ ɔɪ aʊ"
-Simple = u"a e i o u m n l b p"
-EngSegs = ["pʰ","p","b","b̥","tʰ","t","ɾ","d","d̥","ɾ","kʰ","k","ɡ","ɡ̥̊","t̠ʃ","d̠ʒ","f","v","θ","ð","s","z","ʃ","ʒ","h","m","n","ɾ","ŋ","l","ɫ","ɹ","j","w","ɪ","ɛ","æ","ɑ","oʊ","ʊ","uː","ʉː","ʌ","ɚː","ə","aɪ","ɔɪ","aʊ"]
-
-simpleSegs = Simple.split(" ")
-
-word = English
-#word = u"p b m n"
-segs = EngSegs
+segs = []
+with open('input/testInventory.txt', "r", encoding="utf-8") as f:
+    lines = [line for line in f]
+    segs = str(lines[0].strip()).split(" ")
 
 ft = panphon.FeatureTable()
-SpaceSegs = English.split(" ")
 
-
-
-""" for seg in segs:
-    if ft.seg_known() """
-
-
-if ft.validate_word(word): 
-    print("String is valid IPA");
-    if "a" in word:
-        print(u"Did you mean 'ɑ' (U+0251), the open/low back unrounded vowel?")
-else:
-    print("String is invalid IPA");
-    for l in word:
-        if not ft.validate_word(l):
-            print (" The phone '"+l+"' is invalid IPA.")
-            if l == "g":
-                print(u"  Did you mean ɡ (U+0261)?")
-for seg in ft.segs_safe(word):
-    if seg != " ":
-        print(seg)
-        print (ft.fts(seg))
+for seg in segs:
+    if len(ft.segs_safe(seg)) > 1:
+        print (" The phone '" + seg + "' is too complex.")
+    elif not ft.seg_known(seg):
+        print (" The phone '"+ seg +"' is invalid IPA.")
+        if seg == "g":
+            print(u"  Did you mean ɡ (U+0261)?")
+    if "a" in seg:
+        print(u"You wrote 'a'. Did you mean 'ɑ' (U+0251), the open/low back unrounded vowel?")
+    
 
 print("")
 
@@ -44,16 +28,16 @@ panphon_features = ["syl","son","cons","cont","delrel","lat","nas","strid","voi"
 tab = "\t"
 print("ipa\t" + tab.join(panphon_features))
 vecTable = {}
-with open('phontable.txt', 'w', encoding='UTF-8') as f:
-    f.write("\t" + tab.join(panphon_features)+"\r\n")
+with open('output/phontablemax.txt', 'w', encoding='UTF-8') as f:
+    f.write("\t" + tab.join(panphon_features)+"\n")
     #vecTable.append(["labels",panphon_features])
     vecTable.update({"feats": panphon_features})
-    for seg in ft.segs_safe(word):
+    for seg in segs:
         if seg != " ":
             # This is the table-form
             vec = ft.segment_to_vector(seg)
             print(seg + "\t" + tab.join(vec))
-            f.write(seg + "\t" + tab.join(vec) + "\r\n")
+            f.write(seg + "\t" + tab.join(vec) + "\n")
             vecTable.update({seg: vec})
 
 
@@ -72,7 +56,7 @@ for i in range(0,len(panphon_features)):
                     diff = True
                     break 
     else:
-        print("Discarding: " + panphon_features[i] + " from minimal table.")
+        print("Discarding '" + panphon_features[i] + "' from minimal table.")
         delIdx.append(i)
         
 vecTableMin = copy.deepcopy(vecTable)
@@ -82,18 +66,52 @@ for idx in delIdx:
     for key in vecTable:       
         del vecTableMin[key][idx]
 
-with open('phontablemin.txt', 'w', encoding='UTF-8') as f:
+with open('output/phontablemin.txt', 'w', encoding='UTF-8') as f:
     for key in vecTableMin:
         if key == "feats":
-            f.write("\t" + tab.join(vecTableMin[key])+"\r\n")
+            f.write("\t" + tab.join(vecTableMin[key])+"\n")
+            print("\t" + tab.join(vecTableMin[key])+"\n")
         else: 
-            f.write(key + "\t" + tab.join(vecTableMin[key])+"\r\n")
-    
+            f.write(key + "\t" + tab.join(vecTableMin[key])+"\n")
+            print(key + "\t" + tab.join(vecTableMin[key])+"\n")
+distinct = True
+
+for key in vecTableMin:       
+        for compareKey in vecTableMin:
+            if key != "feats" and compareKey != "feats" and key != compareKey:
+                if vecTableMin[key] == vecTableMin[compareKey]:
+                    print("'" + key + "' and '" + compareKey + "' are not distinct!")
+
+compare = []
+dst = panphon.distance.Distance()
+xs = list(vecTableMin.keys())
+compare.append(xs)
+for x in vecTableMin:
+    if x != "feats":
+        vals = []
+        for y in vecTableMin:
+            if y != "feats":
+                if dst.weighted_feature_edit_distance(x,y) != 0:
+                    vals.append(dst.weighted_feature_edit_distance(x,y))
+                else: 
+                    vals.append("-")
+        vals.insert(0, x)
+        compare.append(vals)
+        
+with open('output/phondistmin.txt', 'w', encoding='UTF-8') as f:
+    for l in compare:
+        ls = [str(l) for l in l]
+        f.write(tab.join(ls)+"\n")
+# print(compare)
+
+
 comma = ","               
 #alpha = comma.join(segs)
-alpha = "m,n"
-cmd = "python ../minphonfeat/featuremin.py phontablemin.txt " + alpha
+# alpha = "m,n"
+alpha = "ɪ,ɛ,æ,ɑ,ʊ,uː,ʉː,ʌ,ə"
+cmd = "python featuremin.py output/phontablemin.txt " + alpha
 
 os.system(cmd)
+
 
 
