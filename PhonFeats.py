@@ -28,6 +28,8 @@ panphon_features = ["syl","son","cons","cont","delrel","lat","nas","strid","voi"
 tab = "\t"
 print("ipa\t" + tab.join(panphon_features))
 vecTable = {}
+if not os.path.exists("output"):
+    os.makedirs("output")
 with open('output/phontablemax.txt', 'w', encoding='UTF-8') as f:
     f.write("\t" + tab.join(panphon_features)+"\n")
     #vecTable.append(["labels",panphon_features])
