@@ -3,6 +3,15 @@ import panphon.distance
 import os
 import copy
 #from ..minphonfeat import featuremin as minphonfeat
+
+
+# https://stackoverflow.com/questions/13769242/clustering-words-into-groups
+
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.minimum_spanning_tree.html#:~:text=A%20minimum%20spanning%20tree%20is,computed%20using%20the%20Kruskal%20algorithm.
+
+
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html
+
 segs = []
 with open('input/testInventory.txt', "r", encoding="utf-8") as f:
     lines = [line for line in f]
@@ -114,6 +123,8 @@ alpha = "ɪ,ɛ,æ,ɑ,ʊ,uː,ʉː,ʌ,ə"
 cmd = "python featuremin.py output/phontablemin.txt " + alpha
 
 os.system(cmd)
+
+
 
 
 
